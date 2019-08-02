@@ -17,11 +17,10 @@
 #define CLK  6
 HX711 scale(DOUT, CLK);
 float calibration_factor = 2125; //-7050 worked for my 440lb max scale setup
-float weight = 0;
 
 long Array[] = {};
 float size_Array = 0;
-long weight = 0;
+float weight = 0;
 bool weight_valid;
 int n=0;
 
