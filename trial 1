@@ -21,8 +21,8 @@ float weight = 0;
 
 long Array[] = {};
 float size_Array = 0;
-long y = 0;
-bool y_valid;
+long weight = 0;
+bool weight_valid;
 int n=0;
 
 void setup() {
@@ -38,18 +38,17 @@ void loop() {
   scale.set_scale(calibration_factor); //Adjust to this calibration factor
   weight = scale.get_units();
   Serial.println(weight);
-  
-  y_valid = false;
+  weight_valid = false;
   for (int x = 0; x < size_Array; x++) {
-      if (y == Array[x]) y_valid = true;
+      if (weight == Array[x]) weight_valid = true;
   } 
-  if (y_valid = true){
-  // playback what is connected to y
+  if (weight_valid = true){
+  // playback what is connected to weight
   }
   else{
   Array[n] = weight;
   size_Array = size_Array+1;
   n = n+1;
-  // record and connect to y
+  // record and connect to weight
   }
 }
