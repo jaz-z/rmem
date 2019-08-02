@@ -48,6 +48,6 @@ void loop() {
   Array[n] = weight;
   size_Array = size_Array+1;
   n = n+1;
-  // record and connect to weight
+  // record and connect recording to weight
   }
 }
