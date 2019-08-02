@@ -12,15 +12,19 @@
  The HX711 library can be downloaded from here: https://github.com/bogde/HX711
 */
 #include "HX711.h"
-
 #define DOUT 5
 #define CLK  6
-
 HX711 scale(DOUT, CLK);
-
 float calibration_factor = 2125; //-7050 worked for my 440lb max scale setup
 float units;
 float ounces;
+float savedreadings: //array of already saved object weights
+/*
+I'm currently trying here to make an array in which the weights can be saved, 
+so it can be checked through, if the weight was already measured before 
+(to decide if it should record sound or playback sound)
+*/
+
 
 void setup() {
   Serial.begin(9600);
@@ -29,18 +33,17 @@ void setup() {
   Serial.println("After readings begin, place known weight on scale");
   Serial.println("Press + or a to increase calibration factor");
   Serial.println("Press - or z to decrease calibration factor");
-
   scale.set_scale();
   scale.tare();	//Reset the scale to 0
-
   long zero_factor = scale.read_average(); //Get a baseline reading
   Serial.print("Zero factor: "); //This can be used to remove the need to tare the scale. Useful in permanent scale projects.
   Serial.println(zero_factor);
 }
 
 void loop() {
-
   scale.set_scale(calibration_factor); //Adjust to this calibration factor
+
+if (
 
   Serial.print("Reading: ");
   units = scale.get_units(), 10;
