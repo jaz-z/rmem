@@ -11,28 +11,22 @@
  
  The HX711 library can be downloaded from here: https://github.com/bogde/HX711
 */
+
 #include "HX711.h"
 #define DOUT 5
 #define CLK  6
 HX711 scale(DOUT, CLK);
 float calibration_factor = 2125; //-7050 worked for my 440lb max scale setup
-float units;
-float ounces;
-float savedreadings: //array of already saved object weights
-/*
-I'm currently trying here to make an array in which the weights can be saved, 
-so it can be checked through, if the weight was already measured before 
-(to decide if it should record sound or playback sound)
-*/
+float weight = 0;
 
+long Array[] = {};
+float size_Array = 0;
+long y = 0;
+bool y_valid;
+int n=0;
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("HX711 calibration sketch");
-  Serial.println("Remove all weight from scale");
-  Serial.println("After readings begin, place known weight on scale");
-  Serial.println("Press + or a to increase calibration factor");
-  Serial.println("Press - or z to decrease calibration factor");
   scale.set_scale();
   scale.tare();	//Reset the scale to 0
   long zero_factor = scale.read_average(); //Get a baseline reading
@@ -42,27 +36,20 @@ void setup() {
 
 void loop() {
   scale.set_scale(calibration_factor); //Adjust to this calibration factor
-
-if (
-
-  Serial.print("Reading: ");
-  units = scale.get_units(), 10;
-  if (units < 0) {
-    units = 0.00;
-  }
-  ounces = units * 0.035274;
-  Serial.print(units);
-  Serial.print(" grams"); 
-  Serial.print(" calibration_factor: ");
-  Serial.print(calibration_factor);
-  Serial.println();
+  weight = scale.get_units();
+  Serial.println(weight);
   
-  if(Serial.available())
-  {
-    char temp = Serial.read();
-    if(temp == '+' || temp == 'a')
-      calibration_factor += 1;
-    else if(temp == '-' || temp == 'z')
-      calibration_factor -= 1;
+  y_valid = false;
+  for (int x = 0; x < size_Array; x++) {
+      if (y == Array[x]) y_valid = true;
+  } 
+  if (y_valid = true){
+  // playback what is connected to y
+  }
+  else{
+  Array[n] = weight;
+  size_Array = size_Array+1;
+  n = n+1;
+  // record and connect to y
   }
 }
