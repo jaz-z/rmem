@@ -70,18 +70,29 @@ void setup() {
   }
   
   uint8_t isRecording = false;
+
+  // Timer interrupts are not suggested, better to use DREQ interrupt!
+  //musicPlayer.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
+
+  // If DREQ is on an interrupt pin (on uno, #2 or #3) we can do background
+  // audio playing
+  musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
+  
 }
 
 void loop() {
   scale.set_scale(calibration_factor); //Adjust to this calibration factor
   weight = scale.get_units();
   //Serial.println(weight);
+  //printDirectory(SD.open("/"), 0);
   weight_valid = false;
   for (int x = 0; x < 50; x++) {
       if (weight == Array[x]) weight_valid = true;
   } 
   if (weight_valid = true){
       // playback what is connected to weight
+      if (x < 9) {musicPlayer.playFullFile("/track00"x+1".mp3");}
+      else {musicPlayer.playFullFile("/track0"x+1".mp3");}
   }
   else{
       // record and connect recording to weight
@@ -112,9 +123,10 @@ void loop() {
   if (isRecording)
       saveRecordedData(isRecording);
       
-  if (/*weight is removed*/) {            //maybe i can do something here with the difference between the weight one second ago & the current weight
-     Serial.println("End recording");     //(if the difference is higher than..., then trigger the end of the recording)
+  if (/*weight is removed*/) {                 //maybe i can do something here with the difference between the weight one second ago & the current weight
+     // end recording or playback              //(if the difference is higher than..., then trigger the end of the recording)
      musicPlayer.stopRecordOgg();
+     musicPlayer.stopPlaying();
      isRecording = false;
      // flush all the data!
      saveRecordedData(isRecording);
@@ -123,4 +135,3 @@ void loop() {
      delay(1000);
   }
 }
-
