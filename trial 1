@@ -107,6 +107,7 @@ void loop() {
   }
   
   else{
+  if (weight > 10){
       // record and connect recording to weight
       Serial.println("Begin recording"); 
       isRecording = true;
@@ -131,6 +132,7 @@ void loop() {
       musicPlayer.startRecordOgg(true); // use microphone (for linein, pass in 'false')
       Array[n] = weight;
       n = n+1;
+  }
   }
   
   if (isRecording)
