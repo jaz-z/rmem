@@ -1,0 +1,150 @@
+/*
+ Setup your scale and start the sketch WITHOUT a weight on the scale
+ Once readings are displayed place the weight on the scale
+ Arduino pin 6 -> HX711 CLK
+ Arduino pin 5 -> HX711 DOUT
+ Arduino pin 5V -> HX711 VCC
+ Arduino pin GND -> HX711 GND
+ 
+ The HX711 board can be powered from 2.7V to 5V so the Arduino 5V power should be fine.
+ 
+ Connect a button to digital 7 on the Arduino and use that to start and stop recording.
+ Don't forget to copy the v44k1q05.img patch to your micro SD card before running this example!
+*/
+
+#include "HX711.h"
+#include <SPI.h>
+#include <Adafruit_VS1053.h>
+#include <SD.h>
+
+#define RESET 9      // VS1053 reset pin (output)
+#define CS 10        // VS1053 chip select pin (output)
+#define DCS 8        // VS1053 Data/command select pin (output)
+#define CARDCS A0     // Card chip select pin
+#define DREQ A1       // VS1053 Data request, ideally an Interrupt pin
+
+#define DOUT 5
+#define CLK  6
+HX711 scale(DOUT, CLK);
+float calibration_factor = 2125; //-7050 worked for my 440lb max scale setup
+
+long Array[50];
+float weight = 0;
+float weightasecago = 0;
+bool weight_valid;
+int n=0;
+const long interval = 1000;
+
+Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(RESET, CS, DCS, DREQ, CARDCS);
+
+File recording;  // the file we will save our recording to
+#define RECBUFFSIZE 128  // 64 or 128 bytes.
+uint8_t recording_buffer[RECBUFFSIZE];
+
+void setup() {
+  Serial.begin(9600);
+  scale.set_scale();
+  scale.tare();  //Reset the scale to 0
+  long zero_factor = scale.read_average(); //Get a baseline reading
+  Serial.print("Zero factor: "); //This can be used to remove the need to tare the scale. Useful in permanent scale projects.
+  Serial.println(zero_factor);
+
+  if (!musicPlayer.begin()) {
+  Serial.println("VS1053 not found");
+  while (1);  // don't do anything more
+  }
+
+  musicPlayer.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
+ 
+  if (!SD.begin(CARDCS)) {
+    Serial.println("SD failed, or not present");
+    while (1);  // don't do anything more
+  }
+  Serial.println("SD OK!");
+  
+  // Set volume for left, right channels. lower numbers == louder volume!
+  musicPlayer.setVolume(10,10);
+  
+  if (! musicPlayer.prepareRecordOgg("v44k1q05.img")) {
+    Serial.println("Couldn't load plugin!");
+    while (1);    
+  }
+  
+  uint8_t isRecording = false;
+
+  // Timer interrupts are not suggested, better to use DREQ interrupt!
+  //musicPlayer.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
+
+  // If DREQ is on an interrupt pin (on uno, #2 or #3) we can do background
+  // audio playing
+  musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
+  
+}
+
+
+
+void loop() {
+  scale.set_scale(calibration_factor); //Adjust to this calibration factor
+  //Serial.println(weight);
+  //printDirectory(SD.open("/"), 0);
+  
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {            // the question is if this can run while the else-loop for the recording is running?
+      previousMillis = currentMillis;
+      weightasecago = weight;
+      weight = scale.get_units();
+  }
+
+  for (int x = 0; x < 49; x++) {                               // not sure if i need to put 49 or 50 here, needs to be tested.
+      
+      if (weight == Array[x]){
+           // playback what is connected to weight
+           if (x < 9) {musicPlayer.playFullFile("/track00"x+1".mp3");}
+           else {musicPlayer.playFullFile("/track0"x+1".mp3");}
+      } 
+  
+      else{
+      if (weight > 10) {
+           // record and connect recording to weight
+           Serial.println("Begin recording"); 
+           isRecording = true;
+  
+           // Check if the file exists already
+           char filename[15];
+           strcpy(filename, "RECORD00.OGG");
+           for (uint8_t i = 0; i < 100; i++) {
+                filename[6] = '0' + i/10;
+                filename[7] = '0' + i%10;
+                // create if does not exist, do not open existing, write, sync after write
+                if (! SD.exists(filename)) {
+                     break;
+                }
+            }
+            Serial.print("Recording to "); Serial.println(filename);
+            recording = SD.open(filename, FILE_WRITE);
+            if (! recording) {
+                Serial.println("Couldn't open file to record!");
+                while (1);
+            }
+            musicPlayer.startRecordOgg(true); // use microphone (for linein, pass in 'false')
+            Array[n] = weight;
+            n = n+1;
+       }
+       }
+  }
+  
+  if (isRecording)
+      saveRecordedData(isRecording);
+      
+  if (weight - weightasecago < -200) {                          // does this work?
+     // end recording or playback 
+     musicPlayer.stopRecordOgg();
+     musicPlayer.stopPlaying();
+     isRecording = false;
+     // flush all the data!
+     saveRecordedData(isRecording);
+     // close it up
+     recording.close();
+  }
+  
+}
