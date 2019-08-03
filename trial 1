@@ -29,8 +29,7 @@
 HX711 scale(DOUT, CLK);
 float calibration_factor = 2125; //-7050 worked for my 440lb max scale setup
 
-long Array[] = {};
-int size_Array = 0;
+long Array[50];
 float weight = 0;
 bool weight_valid;
 int n=0;
@@ -78,7 +77,7 @@ void loop() {
   weight = scale.get_units();
   //Serial.println(weight);
   weight_valid = false;
-  for (int x = 0; x < size_Array; x++) {
+  for (int x = 0; x < 50; x++) {
       if (weight == Array[x]) weight_valid = true;
   } 
   if (weight_valid = true){
@@ -108,14 +107,13 @@ void loop() {
       }
       musicPlayer.startRecordOgg(true); // use microphone (for linein, pass in 'false')
       Array[n] = weight;
-      size_Array = size_Array+1;
       n = n+1;
   }
   if (isRecording)
       saveRecordedData(isRecording);
       
-  if (/*weight is removed*/) {            //maybe i can do something here with previous weight & current weight difference
-     Serial.println("End recording");     //(if it's higher than..., then trigger the end of the recording)
+  if (/*weight is removed*/) {            //maybe i can do something here with the difference between the weight one second ago & the current weight
+     Serial.println("End recording");     //(if the difference is higher than..., then trigger the end of the recording)
      musicPlayer.stopRecordOgg();
      isRecording = false;
      // flush all the data!
